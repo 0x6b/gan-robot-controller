@@ -28,7 +28,11 @@ async fn main() -> anyhow::Result<()> {
         })
         .init();
 
-    let controller = GanRobotController::try_new().await?;
+    let controller =
+        GanRobotController::try_new("GAN-a7f13", "0000fff3-0000-1000-8000-00805f9b34fb")?
+            .try_connect()
+            .await?;
+
     controller.scramble(8).await?;
     controller.disconnect().await?;
 
