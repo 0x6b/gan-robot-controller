@@ -44,7 +44,7 @@ Tested on macOS, but could work on other platforms. See [deviceplug/btleplug](ht
 
 ## Acknowledgements
 
-[cubing/cubing.js), especially the [GanRobot.ts](https://github.com/cubing/cubing.js/blob/19e893db4d6b2feaeafd4e40f3a5183b6bad88fc/src/cubing/bluetooth/smart-robot/GanRobot.ts) for the GAN robot control logic.
+[cubing/cubing.js](https://github.com/cubing/cubing.js), especially the [GanRobot.ts](https://github.com/cubing/cubing.js/blob/19e893db4d6b2feaeafd4e40f3a5183b6bad88fc/src/cubing/bluetooth/smart-robot/GanRobot.ts), for the GAN robot control logic.
 
 ## License
 
