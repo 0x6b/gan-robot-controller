@@ -24,6 +24,7 @@ pub enum Move {
     B2,
     B2Prime,
     BPrime,
+    Invalid,
 }
 
 impl From<Move> for u8 {
@@ -50,6 +51,7 @@ impl From<Move> for u8 {
             B2 => 13,
             B2Prime => 13,
             BPrime => 14,
+            Invalid => 255,
         }
     }
 }
@@ -83,7 +85,7 @@ impl From<String> for Move {
             "b2" => Move::B2,
             "b2'" => Move::B2Prime,
             "b'" => Move::BPrime,
-            _ => panic!("Invalid move string"),
+            _ => Move::Invalid,
         }
     }
 }
@@ -120,7 +122,7 @@ impl FromStr for Move {
             "B2" => Ok(B2),
             "B2'" => Ok(B2Prime),
             "B'" => Ok(BPrime),
-            _ => Err(()),
+            _ => Ok(Invalid),
         }
     }
 }
@@ -149,8 +151,9 @@ impl Display for Move {
             B2 => "B2",
             B2Prime => "B2'",
             BPrime => "B'",
+            Invalid => "(Invalid)",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

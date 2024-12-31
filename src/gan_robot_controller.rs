@@ -60,7 +60,11 @@ impl GanRobotController<Connected> {
             "Doing moves: {}",
             moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
         );
-        let moves = moves.iter().map(u8::from).collect::<Vec<u8>>();
+        let moves = moves
+            .iter()
+            .filter(|m| **m != Move::Invalid)
+            .map(u8::from)
+            .collect::<Vec<u8>>();
         self.gan_robot
             .write(&self.move_characteristic, &moves, WriteType::WithoutResponse)
             .await?;
