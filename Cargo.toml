@@ -1,16 +1,15 @@
-[package]
-name = "gan-robot-controller"
+[workspace]
+members = ["cli", "lib"]
+resolver = "2"
+default-members = ["cli"]
+
+[workspace.package]
+authors = ["kaoru <k@warpnine.io>"]
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.95"
-btleplug = "0.11.7"
 clap = { version = "4.5.23", features = ["derive", "env", "wrap_help"] }
 env_logger = "0.11.6"
-futures = "0.3.31"
-jiff = "0.1.16"
 log = "0.4.22"
-rand = "0.8.5"
-tokio = { version = "1.42.0", features = ["full"] }
-uuid = "1.11.0"

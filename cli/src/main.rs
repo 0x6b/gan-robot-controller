@@ -5,8 +5,8 @@ use env_logger::{
     fmt::style::{AnsiColor, Style},
     Builder, Env,
 };
-use gan_robot_controller::{GanRobotController, Move};
 use jiff::{tz::TimeZone, Zoned};
+use lib::{GanRobotController, Move};
 
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
 
