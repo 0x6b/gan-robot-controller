@@ -10,7 +10,7 @@ use futures::StreamExt;
 use log::info;
 use uuid::Uuid;
 
-use crate::MoveMap;
+use crate::{Move, MoveMap};
 
 pub trait State {}
 
@@ -48,20 +48,27 @@ where
 }
 
 impl GanRobotController<Connected> {
-    pub async fn scramble(&self, num_moves: usize) -> anyhow::Result<Vec<u8>> {
+    pub async fn scramble(&self, num_moves: usize) -> anyhow::Result<()> {
+        info!("Scrambling with {num_moves} moves");
         let moves = self.move_map.get_random_moves(num_moves);
         self.do_move(&moves).await?;
-        Ok(moves)
+        Ok(())
     }
 
-    pub async fn do_move(&self, moves: &[u8]) -> anyhow::Result<()> {
+    pub async fn do_move(&self, moves: &[Move]) -> anyhow::Result<()> {
+        info!(
+            "Doing moves: {}",
+            moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
+        );
+        let moves = moves.iter().map(u8::from).collect::<Vec<u8>>();
         self.gan_robot
-            .write(&self.move_characteristic, moves, WriteType::WithoutResponse)
+            .write(&self.move_characteristic, &moves, WriteType::WithoutResponse)
             .await?;
         Ok(())
     }
 
     pub async fn disconnect(&self) -> anyhow::Result<()> {
+        info!("Disconnecting from GAN robot");
         self.gan_robot.disconnect().await?;
         Ok(())
     }
