@@ -18,6 +18,81 @@ use uuid::Uuid;
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
 static MOVE_MAP: LazyLock<MoveMap> = LazyLock::new(MoveMap::new);
 
+pub struct GanRobotController {
+    gan_robot: Peripheral,
+    move_characteristic: Characteristic,
+}
+
+impl GanRobotController {
+    pub async fn try_new() -> anyhow::Result<Self> {
+        let manager = Manager::new().await?;
+        let central = Self::get_central(&manager).await;
+
+        let mut events = central.events().await?;
+        info!("Scanning for GAN robot");
+        central.start_scan(ScanFilter::default()).await?;
+
+        while let Some(event) = events.next().await {
+            if let CentralEvent::DeviceDiscovered(id) = event {
+                if let Some(gan_robot) = Self::find_gan_robot(&central, &id).await? {
+                    gan_robot.connect().await?;
+                    let move_characteristic = Self::find_move_characteristic(&gan_robot).await?;
+                    return Ok(Self { gan_robot, move_characteristic });
+                } else {
+                    continue;
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("GAN robot not found"))
+    }
+
+    async fn do_move(&self, moves: &[u8]) -> anyhow::Result<()> {
+        self.gan_robot
+            .write(&self.move_characteristic, moves, WriteType::WithoutResponse)
+            .await?;
+        Ok(())
+    }
+
+    async fn disconnect(&self) -> anyhow::Result<()> {
+        self.gan_robot.disconnect().await?;
+        Ok(())
+    }
+
+    async fn get_central(manager: &Manager) -> Adapter {
+        let adapters = manager.adapters().await.unwrap();
+        adapters.into_iter().next().unwrap()
+    }
+
+    async fn find_gan_robot(
+        central: &Adapter,
+        id: &PeripheralId,
+    ) -> anyhow::Result<Option<Peripheral>> {
+        let peripheral = central.peripheral(id).await?;
+        let properties = peripheral.properties().await?;
+        let name = properties.and_then(|p| p.local_name).unwrap_or_default();
+        if name == "GAN-a7f13" {
+            central.stop_scan().await?;
+            peripheral.connect().await?;
+            info!("Connected: {id:?} {name}");
+            return Ok(Some(peripheral));
+        }
+        Ok(None)
+    }
+
+    async fn find_move_characteristic(peripheral: &Peripheral) -> anyhow::Result<Characteristic> {
+        peripheral.discover_services().await?;
+        for service in peripheral.services() {
+            for characteristic in service.characteristics {
+                if characteristic.uuid == Uuid::parse_str("0000fff3-0000-1000-8000-00805f9b34fb")? {
+                    return Ok(characteristic);
+                }
+            }
+        }
+        Err(anyhow::anyhow!("Move characteristic not found"))
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     Builder::from_env(Env::default().default_filter_or("info,html5ever=off"))
@@ -36,31 +111,11 @@ async fn main() -> anyhow::Result<()> {
             )
         })
         .init();
-    let manager = Manager::new().await?;
+    let controller = GanRobotController::try_new().await?;
+    let moves = MOVE_MAP.get_random_moves(8);
+    controller.do_move(&moves).await?;
+    controller.disconnect().await?;
 
-    // get the first bluetooth adapter
-    let central = get_central(&manager).await;
-
-    let mut events = central.events().await?;
-    central.start_scan(ScanFilter::default()).await?;
-
-    while let Some(event) = events.next().await {
-        if let CentralEvent::DeviceDiscovered(id) = event {
-            if let Some(gan_robot) = find_gan_robot(&central, &id).await? {
-                gan_robot.connect().await?;
-                let move_characteristic = find_move_characteristic(&gan_robot).await?;
-                info!("Move characteristic: {:?}", move_characteristic);
-                let moves = MOVE_MAP.get_random_moves(8);
-                gan_robot
-                    .write(&move_characteristic, &moves, WriteType::WithoutResponse)
-                    .await?;
-                gan_robot.disconnect().await?;
-                break;
-            } else {
-                continue;
-            }
-        }
-    }
     Ok(())
 }
 
@@ -131,37 +186,4 @@ impl MoveMap {
             .map(|m| self.get(*m))
             .collect()
     }
-}
-
-async fn get_central(manager: &Manager) -> Adapter {
-    let adapters = manager.adapters().await.unwrap();
-    adapters.into_iter().next().unwrap()
-}
-
-async fn find_gan_robot(
-    central: &Adapter,
-    id: &PeripheralId,
-) -> anyhow::Result<Option<Peripheral>> {
-    let peripheral = central.peripheral(id).await?;
-    let properties = peripheral.properties().await?;
-    let name = properties.and_then(|p| p.local_name).unwrap_or_default();
-    if name.starts_with("GAN") {
-        central.stop_scan().await?;
-        peripheral.connect().await?;
-        info!("Connected: {id:?} {name}");
-        return Ok(Some(peripheral));
-    }
-    Ok(None)
-}
-
-async fn find_move_characteristic(peripheral: &Peripheral) -> anyhow::Result<Characteristic> {
-    peripheral.discover_services().await?;
-    for service in peripheral.services() {
-        for characteristic in service.characteristics {
-            if characteristic.uuid == Uuid::parse_str("0000fff3-0000-1000-8000-00805f9b34fb")? {
-                return Ok(characteristic);
-            }
-        }
-    }
-    Err(anyhow::anyhow!("Move characteristic not found"))
 }
