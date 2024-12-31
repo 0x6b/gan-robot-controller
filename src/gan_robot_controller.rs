@@ -51,11 +51,11 @@ impl GanRobotController<Connected> {
     pub async fn scramble(&self, num_moves: usize) -> anyhow::Result<()> {
         info!("Scrambling with {num_moves} moves");
         let moves = self.move_map.get_random_moves(num_moves);
-        self.do_move(&moves).await?;
+        self.do_moves(&moves).await?;
         Ok(())
     }
 
-    pub async fn do_move(&self, moves: &[Move]) -> anyhow::Result<()> {
+    pub async fn do_moves(&self, moves: &[Move]) -> anyhow::Result<()> {
         info!(
             "Doing moves: {}",
             moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")

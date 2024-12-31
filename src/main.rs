@@ -5,7 +5,7 @@ use env_logger::{
     fmt::style::{AnsiColor, Style},
     Builder, Env,
 };
-use gan_robot_controller::GanRobotController;
+use gan_robot_controller::{GanRobotController, Move};
 use jiff::{tz::TimeZone, Zoned};
 
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
@@ -25,7 +25,27 @@ pub struct Args {
         default_value = "0000fff3-0000-1000-8000-00805f9b34fb"
     )]
     pub move_characteristic: String,
+
+    #[clap(subcommand)]
+    pub command: Command,
 }
+
+#[derive(Debug, Parser)]
+pub enum Command {
+    /// Scramble the cube with the given number of moves.
+    Scramble {
+        /// The number of moves to scramble the cube with.
+        #[arg(short, long, default_value = "8")]
+        num: usize,
+    },
+
+    /// Do moves on the cube with the given move sequence.
+    Move {
+        /// The move sequence to do on the cube.
+        moves: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     Builder::from_env(Env::default().default_filter_or("info"))
@@ -45,12 +65,20 @@ async fn main() -> anyhow::Result<()> {
         })
         .init();
 
-    let Args { name, move_characteristic } = Args::parse();
+    let Args { name, move_characteristic, command } = Args::parse();
     let controller = GanRobotController::try_new(&name, &move_characteristic)?
         .try_connect()
         .await?;
 
-    controller.scramble(8).await?;
+    match command {
+        Command::Scramble { num } => controller.scramble(num).await?,
+        Command::Move { moves } => {
+            controller
+                .do_moves(&moves.split_whitespace().map(Move::from).collect::<Vec<_>>())
+                .await?
+        }
+    }
+
     controller.disconnect().await?;
 
     Ok(())

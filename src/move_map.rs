@@ -60,6 +60,40 @@ impl From<&Move> for u8 {
     }
 }
 
+impl From<String> for Move {
+    fn from(s: String) -> Self {
+        match s.to_lowercase().as_str() {
+            "r" => Move::R,
+            "r2" => Move::R2,
+            "r2'" => Move::R2Prime,
+            "r'" => Move::RPrime,
+            "f" => Move::F,
+            "f2" => Move::F2,
+            "f2'" => Move::F2Prime,
+            "f'" => Move::FPrime,
+            "d" => Move::D,
+            "d2" => Move::D2,
+            "d2'" => Move::D2Prime,
+            "d'" => Move::DPrime,
+            "l" => Move::L,
+            "l2" => Move::L2,
+            "l2'" => Move::L2Prime,
+            "l'" => Move::LPrime,
+            "b" => Move::B,
+            "b2" => Move::B2,
+            "b2'" => Move::B2Prime,
+            "b'" => Move::BPrime,
+            _ => panic!("Invalid move string"),
+        }
+    }
+}
+
+impl From<&str> for Move {
+    fn from(s: &str) -> Self {
+        s.to_string().into()
+    }
+}
+
 impl FromStr for Move {
     type Err = ();
 
