@@ -11,7 +11,7 @@ static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unw
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    Builder::from_env(Env::default().default_filter_or("info,html5ever=off"))
+    Builder::from_env(Env::default().default_filter_or("info"))
         .format(|buf, record| {
             let subtle = Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
             let level_style = buf.default_level_style(record.level());
