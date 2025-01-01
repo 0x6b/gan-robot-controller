@@ -55,8 +55,9 @@ pub enum Command {
     /// Do moves on the cube with the given move sequence.
     Move {
         /// The move sequence to do on the cube. Each move should be separated by whitespace.
-        /// Please note that the moves should be in the format of face rotation strings like "R",
-        /// "R2", "R'", but it's not accurate at the moment.
+        /// Please note that the moves should be in the format of face rotation strings. Valid
+        /// strings include `R`, `R'`, `R2`, `R2'`, `F`, `F'`, `F2`, `F2'`, `D`, `D'`, `D2`, `D2'`,
+        /// `L`, `L'`, `L2`, `L2'`, `B`, `B'`, `B2`, `B2'`.
         moves: String,
     },
 
