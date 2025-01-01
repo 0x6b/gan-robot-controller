@@ -9,7 +9,8 @@ use env_logger::{
     Builder, Env,
 };
 use jiff::{tz::TimeZone, Zoned};
-use lib::{GanRobotController, Move};
+use lib::{FaceRotation, GanRobotController, MAX_MOVES_PER_WRITE};
+use log::info;
 
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
 
@@ -29,6 +30,15 @@ pub struct Args {
     )]
     pub move_characteristic: String,
 
+    /// The status characteristic UUID of the GAN robot.
+    #[arg(
+        short,
+        long,
+        env = "GAN_ROBOT_STATUS_CHARACTERISTIC",
+        default_value = "0000fff2-0000-1000-8000-00805f9b34fb"
+    )]
+    pub status_characteristic: String,
+
     #[clap(subcommand)]
     pub command: Command,
 }
@@ -44,12 +54,20 @@ pub enum Command {
 
     /// Do moves on the cube with the given move sequence.
     Move {
-        /// The move sequence to do on the cube.
+        /// The move sequence to do on the cube. Each move should be separated by whitespace.
+        /// Please note that the moves should be in the format of face rotation strings. Valid
+        /// strings include `R`, `R'`, `R2`, `R2'`, `F`, `F'`, `F2`, `F2'`, `D`, `D'`, `D2`, `D2'`,
+        /// `L`, `L'`, `L2`, `L2'`, `B`, `B'`, `B2`, `B2'`.
         moves: String,
     },
 
     /// Enter a REPL to interact with the cube.
-    Repl,
+    Repl {
+        /// Use raw u8 values for moves instead of the default face rotation strings like "R",
+        /// "R2", "R'".
+        #[arg(short, long)]
+        debug: bool,
+    },
 }
 
 #[tokio::main]
@@ -71,20 +89,33 @@ async fn main() -> anyhow::Result<()> {
         })
         .init();
 
-    let Args { name, move_characteristic, command } = Args::parse();
-    let controller = GanRobotController::try_new(&name, &move_characteristic)?
-        .try_connect()
-        .await?;
+    let Args {
+        name,
+        move_characteristic,
+        status_characteristic,
+        command,
+    } = Args::parse();
+    let controller =
+        GanRobotController::try_new(&name, &move_characteristic, &status_characteristic)?
+            .try_connect()
+            .await?;
 
     match command {
-        Command::Scramble { num } => controller.scramble(num).await?,
+        Command::Scramble { num } => {
+            if num > MAX_MOVES_PER_WRITE {
+                anyhow::bail!(
+                    "Too many moves: {num}. Can only scramble with {MAX_MOVES_PER_WRITE} moves at a time"
+                );
+            }
+            controller.scramble(num).await?
+        }
         Command::Move { moves } => {
             controller
-                .do_moves(&moves.split_whitespace().map(Move::from).collect::<Vec<_>>())
+                .do_moves(&moves.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>())
                 .await?
         }
-        Command::Repl => {
-            println!("Entering REPL. Type `exit` to exit.");
+        Command::Repl { debug } => {
+            info!("Entering REPL. Type `exit` to exit.");
             loop {
                 let mut input = String::new();
                 stdin().read_line(&mut input)?;
@@ -94,9 +125,19 @@ async fn main() -> anyhow::Result<()> {
                     break;
                 }
 
-                controller
-                    .do_moves(&input.split_whitespace().map(Move::from).collect::<Vec<_>>())
-                    .await?;
+                if debug {
+                    let moves = input
+                        .split_whitespace()
+                        .map(|s| s.parse::<u8>().unwrap_or_default())
+                        .collect::<Vec<_>>();
+                    controller.do_moves_raw(&moves).await?;
+                } else {
+                    controller
+                        .do_moves(
+                            &input.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>(),
+                        )
+                        .await?;
+                }
             }
         }
     }

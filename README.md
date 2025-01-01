@@ -2,6 +2,9 @@
 
 A simple CLI to control the [GAN Cube Robot](https://www.gancube.com/products/gan-speed-cube-robot).
 
+> [!WARN]
+> Running this code may break your cube or robot. Use at your own risk.
+
 ## Usage
 
 ```console
@@ -11,6 +14,7 @@ Usage: gan-robot-controller [OPTIONS] <COMMAND>
 Commands:
   scramble  Scramble the cube with the given number of moves
   move      Do moves on the cube with the given move sequence
+  repl      Enter a REPL to interact with the cube
   help      Print this message or the help of the given subcommand(s)
 
 Options:
@@ -20,6 +24,10 @@ Options:
           The move characteristic UUID of the GAN robot [env:
           GAN_ROBOT_MOVE_CHARACTERISTIC=] [default:
           0000fff3-0000-1000-8000-00805f9b34fb]
+  -s, --status-characteristic <STATUS_CHARACTERISTIC>
+          The status characteristic UUID of the GAN robot [env:
+          GAN_ROBOT_STATUS_CHARACTERISTIC=] [default:
+          0000fff2-0000-1000-8000-00805f9b34fb]
   -h, --help
           Print help
   -V, --version

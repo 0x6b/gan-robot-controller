@@ -251,13 +251,14 @@ checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "clap",
  "env_logger",
  "jiff",
  "lib",
+ "log",
  "tokio",
 ]
 
@@ -575,13 +576,14 @@ dependencies = [
 
 [[package]]
 name = "lib"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "btleplug",
  "futures",
  "log",
  "rand",
+ "tokio",
  "uuid",
 ]
 
