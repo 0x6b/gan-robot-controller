@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use rand::seq::SliceRandom;
+use rand::Rng;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum FaceRotation {
@@ -178,9 +178,9 @@ impl FaceRotationMap {
     }
 
     pub fn get_random_moves(&self, n: usize) -> Vec<FaceRotation> {
-        self.map
-            .choose_multiple(&mut rand::thread_rng(), n)
-            .cloned()
-            .collect()
+        (0..n)
+            .map(|_| rand::thread_rng().gen_range(0..self.map.len()))
+            .map(|i| self.map[i])
+            .collect::<Vec<FaceRotation>>()
     }
 }
