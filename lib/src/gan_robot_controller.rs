@@ -11,9 +11,8 @@ use log::info;
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
-use crate::{FaceRotation, FaceRotationMap};
+use crate::{FaceRotation, FaceRotationMap, MAX_MOVES_PER_WRITE};
 
-const MAX_MOVES_PER_WRITE: usize = 36;
 const QUANTUM_TURN_DURATION_MS: usize = 150;
 const DOUBLE_TURN_DURATION_MS: usize = 250;
 

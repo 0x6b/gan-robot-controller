@@ -9,7 +9,7 @@ use env_logger::{
     Builder, Env,
 };
 use jiff::{tz::TimeZone, Zoned};
-use lib::{FaceRotation, GanRobotController};
+use lib::{FaceRotation, GanRobotController, MAX_MOVES_PER_WRITE};
 use log::info;
 
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
@@ -101,7 +101,14 @@ async fn main() -> anyhow::Result<()> {
             .await?;
 
     match command {
-        Command::Scramble { num } => controller.scramble(num).await?,
+        Command::Scramble { num } => {
+            if num > MAX_MOVES_PER_WRITE {
+                anyhow::bail!(
+                    "Too many moves: {num}. Can only scramble with {MAX_MOVES_PER_WRITE} moves at a time"
+                );
+            }
+            controller.scramble(num).await?
+        }
         Command::Move { moves } => {
             controller
                 .do_moves(&moves.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>())
