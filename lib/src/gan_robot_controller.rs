@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::{FaceRotation, FaceRotationMap};
 
-const MAX_NIBBLES_PER_WRITE: usize = 36;
+const MAX_MOVES_PER_WRITE: usize = 36;
 const QUANTUM_TURN_DURATION_MS: usize = 150;
 const DOUBLE_TURN_DURATION_MS: usize = 250;
 
@@ -175,8 +175,8 @@ impl GanRobotController<Connected> {
             moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
         );
 
-        if moves.len() > MAX_NIBBLES_PER_WRITE {
-            anyhow::bail!("Too many moves. Can only do {MAX_NIBBLES_PER_WRITE} moves at a time");
+        if moves.len() > MAX_MOVES_PER_WRITE {
+            anyhow::bail!("Too many moves. Can only do {MAX_MOVES_PER_WRITE} moves at a time");
         }
 
         let mut bytes = [0u8; 18];
@@ -216,12 +216,12 @@ impl GanRobotController<Connected> {
     }
 }
 
-fn is_double_turn_move(nibble: u8) -> bool {
-    nibble % 3 == 1
+fn is_double_turn_move(m: u8) -> bool {
+    m % 3 == 1
 }
 
-fn move_duration(nibble: u8) -> usize {
-    if is_double_turn_move(nibble) {
+fn move_duration(m: u8) -> usize {
+    if is_double_turn_move(m) {
         DOUBLE_TURN_DURATION_MS
     } else {
         QUANTUM_TURN_DURATION_MS
