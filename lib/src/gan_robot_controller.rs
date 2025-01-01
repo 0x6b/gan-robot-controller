@@ -8,9 +8,14 @@ use btleplug::{
 };
 use futures::StreamExt;
 use log::info;
+use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
 use crate::{FaceRotation, FaceRotationMap};
+
+const MAX_NIBBLES_PER_WRITE: usize = 36;
+const QUANTUM_TURN_DURATION_MS: usize = 150;
+const DOUBLE_TURN_DURATION_MS: usize = 250;
 
 pub trait State {}
 
@@ -46,54 +51,6 @@ where
 
     fn deref(&self) -> &Self::Target {
         &self.state
-    }
-}
-
-impl GanRobotController<Connected> {
-    pub async fn scramble(&self, num_moves: usize) -> anyhow::Result<()> {
-        info!("Scrambling with {num_moves} moves");
-        let moves = self.face_rotation_map.get_random_moves(num_moves);
-        self.do_moves(&moves).await?;
-        Ok(())
-    }
-
-    pub async fn do_moves(&self, moves: &[FaceRotation]) -> anyhow::Result<()> {
-        info!(
-            "Doing moves: {}",
-            moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
-        );
-        let moves = moves
-            .iter()
-            .filter(|m| **m != FaceRotation::Invalid)
-            .map(u8::from)
-            .collect::<Vec<u8>>();
-        self.gan_robot
-            .write(&self.move_characteristic, &moves, WriteType::WithoutResponse)
-            .await?;
-        Ok(())
-    }
-
-    pub async fn get_status(&self) -> anyhow::Result<Vec<u8>> {
-        let status = self.gan_robot.read(&self.status_characteristic).await?;
-        info!("Status: {status:?}");
-        Ok(status)
-    }
-
-    pub async fn do_moves_raw(&self, moves: &[u8]) -> anyhow::Result<()> {
-        info!(
-            "Doing move: {}",
-            moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
-        );
-        self.gan_robot
-            .write(&self.move_characteristic, moves, WriteType::WithoutResponse)
-            .await?;
-        Ok(())
-    }
-
-    pub async fn disconnect(&self) -> anyhow::Result<()> {
-        info!("Disconnecting from GAN robot");
-        self.gan_robot.disconnect().await?;
-        Ok(())
     }
 }
 
@@ -181,5 +138,92 @@ impl GanRobotController<Uninitialized> {
             }
         }
         Err(anyhow::anyhow!("Move characteristic not found"))
+    }
+}
+
+impl GanRobotController<Connected> {
+    pub async fn scramble(&self, num_moves: usize) -> anyhow::Result<()> {
+        info!("Scrambling with {num_moves} moves");
+        let moves = self.face_rotation_map.get_random_moves(num_moves);
+        self.do_moves(&moves).await?;
+        Ok(())
+    }
+
+    pub async fn do_moves(&self, moves: &[FaceRotation]) -> anyhow::Result<()> {
+        info!(
+            "Doing moves: {}",
+            moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
+        );
+        let moves = moves
+            .iter()
+            .filter(|m| **m != FaceRotation::Invalid)
+            .map(u8::from)
+            .collect::<Vec<u8>>();
+        self.do_moves_raw(&moves).await
+    }
+
+    pub async fn get_remaining_moves(&self) -> anyhow::Result<u8> {
+        let status = self.gan_robot.read(&self.status_characteristic).await?;
+        let remaining_moves = if status.is_empty() { 0 } else { status[0] };
+        info!("Remaining moves: {remaining_moves}");
+        Ok(remaining_moves)
+    }
+
+    pub async fn do_moves_raw(&self, moves: &[u8]) -> anyhow::Result<()> {
+        info!(
+            "Doing moves: {}",
+            moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
+        );
+
+        if moves.len() > MAX_NIBBLES_PER_WRITE {
+            anyhow::bail!("Too many moves. Can only do {MAX_NIBBLES_PER_WRITE} moves at a time");
+        }
+
+        let mut bytes = [0u8; 18];
+        moves.iter().enumerate().for_each(|(i, &m)| {
+            let byte_index = i / 2;
+            bytes[byte_index] += m;
+            if i % 2 == 0 {
+                bytes[byte_index] *= 0x10;
+            }
+        });
+
+        if moves.len() % 2 == 1 {
+            bytes[(moves.len() / 2).saturating_sub(1)] += 0x0f;
+        }
+
+        for i in bytes.iter_mut().skip(moves.len()) {
+            *i = 0xff;
+        }
+
+        let sleep_duration = moves.iter().map(|&m| move_duration(m)).sum::<usize>();
+
+        self.gan_robot
+            .write(&self.move_characteristic, &bytes, WriteType::WithoutResponse)
+            .await?;
+        sleep(Duration::from_millis((sleep_duration as f64 * 0.75) as u64)).await;
+
+        while self.get_remaining_moves().await? > 0 {
+            sleep(Duration::from_millis(100)).await;
+        }
+        Ok(())
+    }
+
+    pub async fn disconnect(&self) -> anyhow::Result<()> {
+        info!("Disconnecting from GAN robot");
+        self.gan_robot.disconnect().await?;
+        Ok(())
+    }
+}
+
+fn is_double_turn_move(nibble: u8) -> bool {
+    nibble % 3 == 1
+}
+
+fn move_duration(nibble: u8) -> usize {
+    if is_double_turn_move(nibble) {
+        DOUBLE_TURN_DURATION_MS
+    } else {
+        QUANTUM_TURN_DURATION_MS
     }
 }
