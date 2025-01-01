@@ -9,7 +9,7 @@ use env_logger::{
     Builder, Env,
 };
 use jiff::{tz::TimeZone, Zoned};
-use lib::{GanRobotController, Move};
+use lib::{FaceRotation, GanRobotController};
 
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
 
@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Scramble { num } => controller.scramble(num).await?,
         Command::Move { moves } => {
             controller
-                .do_moves(&moves.split_whitespace().map(Move::from).collect::<Vec<_>>())
+                .do_moves(&moves.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>())
                 .await?
         }
         Command::Repl => {
@@ -95,7 +95,7 @@ async fn main() -> anyhow::Result<()> {
                 }
 
                 controller
-                    .do_moves(&input.split_whitespace().map(Move::from).collect::<Vec<_>>())
+                    .do_moves(&input.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>())
                     .await?;
             }
         }

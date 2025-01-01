@@ -1,5 +1,5 @@
+mod face_rotation;
 mod gan_robot_controller;
-mod move_map;
 
+pub use face_rotation::{FaceRotation, FaceRotationMap};
 pub use gan_robot_controller::GanRobotController;
-pub use move_map::{Move, MoveMap};

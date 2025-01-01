@@ -10,7 +10,7 @@ use futures::StreamExt;
 use log::info;
 use uuid::Uuid;
 
-use crate::{Move, MoveMap};
+use crate::{FaceRotation, FaceRotationMap};
 
 pub trait State {}
 
@@ -24,7 +24,7 @@ impl State for Uninitialized {}
 pub struct Connected {
     gan_robot: Peripheral,
     move_characteristic: Characteristic,
-    move_map: MoveMap,
+    face_rotation_map: FaceRotationMap,
 }
 
 impl State for Connected {}
@@ -50,19 +50,19 @@ where
 impl GanRobotController<Connected> {
     pub async fn scramble(&self, num_moves: usize) -> anyhow::Result<()> {
         info!("Scrambling with {num_moves} moves");
-        let moves = self.move_map.get_random_moves(num_moves);
+        let moves = self.face_rotation_map.get_random_moves(num_moves);
         self.do_moves(&moves).await?;
         Ok(())
     }
 
-    pub async fn do_moves(&self, moves: &[Move]) -> anyhow::Result<()> {
+    pub async fn do_moves(&self, moves: &[FaceRotation]) -> anyhow::Result<()> {
         info!(
             "Doing moves: {}",
             moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
         );
         let moves = moves
             .iter()
-            .filter(|m| **m != Move::Invalid)
+            .filter(|m| **m != FaceRotation::Invalid)
             .map(u8::from)
             .collect::<Vec<u8>>();
         self.gan_robot
@@ -104,7 +104,7 @@ impl GanRobotController<Uninitialized> {
                         state: Connected {
                             gan_robot,
                             move_characteristic,
-                            move_map: MoveMap::new(),
+                            face_rotation_map: FaceRotationMap::new(),
                         },
                     });
                 } else {

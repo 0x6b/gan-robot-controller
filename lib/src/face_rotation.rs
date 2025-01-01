@@ -3,7 +3,7 @@ use std::{fmt::Display, str::FromStr};
 use rand::seq::SliceRandom;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub enum Move {
+pub enum FaceRotation {
     R,
     R2,
     R2Prime,
@@ -27,10 +27,10 @@ pub enum Move {
     Invalid,
 }
 
-impl From<Move> for u8 {
-    fn from(mv: Move) -> u8 {
-        use Move::*;
-        match mv {
+impl From<FaceRotation> for u8 {
+    fn from(r: FaceRotation) -> u8 {
+        use FaceRotation::*;
+        match r {
             R => 0,
             R2 => 1,
             R2Prime => 1,
@@ -56,51 +56,51 @@ impl From<Move> for u8 {
     }
 }
 
-impl From<&Move> for u8 {
-    fn from(mv: &Move) -> u8 {
-        u8::from(*mv)
+impl From<&FaceRotation> for u8 {
+    fn from(r: &FaceRotation) -> u8 {
+        u8::from(*r)
     }
 }
 
-impl From<String> for Move {
+impl From<String> for FaceRotation {
     fn from(s: String) -> Self {
         match s.to_lowercase().as_str() {
-            "r" => Move::R,
-            "r2" => Move::R2,
-            "r2'" => Move::R2Prime,
-            "r'" => Move::RPrime,
-            "f" => Move::F,
-            "f2" => Move::F2,
-            "f2'" => Move::F2Prime,
-            "f'" => Move::FPrime,
-            "d" => Move::D,
-            "d2" => Move::D2,
-            "d2'" => Move::D2Prime,
-            "d'" => Move::DPrime,
-            "l" => Move::L,
-            "l2" => Move::L2,
-            "l2'" => Move::L2Prime,
-            "l'" => Move::LPrime,
-            "b" => Move::B,
-            "b2" => Move::B2,
-            "b2'" => Move::B2Prime,
-            "b'" => Move::BPrime,
-            _ => Move::Invalid,
+            "r" => FaceRotation::R,
+            "r2" => FaceRotation::R2,
+            "r2'" => FaceRotation::R2Prime,
+            "r'" => FaceRotation::RPrime,
+            "f" => FaceRotation::F,
+            "f2" => FaceRotation::F2,
+            "f2'" => FaceRotation::F2Prime,
+            "f'" => FaceRotation::FPrime,
+            "d" => FaceRotation::D,
+            "d2" => FaceRotation::D2,
+            "d2'" => FaceRotation::D2Prime,
+            "d'" => FaceRotation::DPrime,
+            "l" => FaceRotation::L,
+            "l2" => FaceRotation::L2,
+            "l2'" => FaceRotation::L2Prime,
+            "l'" => FaceRotation::LPrime,
+            "b" => FaceRotation::B,
+            "b2" => FaceRotation::B2,
+            "b2'" => FaceRotation::B2Prime,
+            "b'" => FaceRotation::BPrime,
+            _ => FaceRotation::Invalid,
         }
     }
 }
 
-impl From<&str> for Move {
+impl From<&str> for FaceRotation {
     fn from(s: &str) -> Self {
         s.to_string().into()
     }
 }
 
-impl FromStr for Move {
+impl FromStr for FaceRotation {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use Move::*;
+        use FaceRotation::*;
         match s {
             "R" => Ok(R),
             "R2" => Ok(R2),
@@ -127,9 +127,9 @@ impl FromStr for Move {
     }
 }
 
-impl Display for Move {
+impl Display for FaceRotation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use Move::*;
+        use FaceRotation::*;
         let s = match self {
             R => "R",
             R2 => "R2",
@@ -157,19 +157,19 @@ impl Display for Move {
     }
 }
 
-pub struct MoveMap {
-    map: Vec<Move>,
+pub struct FaceRotationMap {
+    map: Vec<FaceRotation>,
 }
 
-impl Default for MoveMap {
+impl Default for FaceRotationMap {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MoveMap {
+impl FaceRotationMap {
     pub fn new() -> Self {
-        use Move::*;
+        use FaceRotation::*;
         let map = vec![
             R, R2, R2Prime, RPrime, F, F2, F2Prime, FPrime, D, D2, D2Prime, DPrime, L, L2, L2Prime,
             LPrime, B, B2, B2Prime, BPrime,
@@ -177,7 +177,7 @@ impl MoveMap {
         Self { map }
     }
 
-    pub fn get_random_moves(&self, n: usize) -> Vec<Move> {
+    pub fn get_random_moves(&self, n: usize) -> Vec<FaceRotation> {
         self.map
             .choose_multiple(&mut rand::thread_rng(), n)
             .cloned()
