@@ -1,0 +1,13 @@
+[package]
+name = "lib"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+btleplug = "0.11.7"
+futures = "0.3.31"
+log.workspace = true
+rand = "0.8.5"
+uuid = "1.11.0"

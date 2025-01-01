@@ -1,0 +1,17 @@
+[package]
+name = "cli"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "gan-robot-controller"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+env_logger.workspace = true
+jiff = "0.1.16"
+tokio = { version = "1.42.0", features = ["full"] }
+lib = { path = "../lib" }

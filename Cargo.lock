@@ -250,6 +250,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "env_logger",
+ "jiff",
+ "lib",
+ "tokio",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -451,22 +463,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gan-robot-controller"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "btleplug",
- "clap",
- "env_logger",
- "futures",
- "jiff",
- "log",
- "rand",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -574,6 +570,18 @@ dependencies = [
  "log",
  "once_cell",
  "static_assertions",
+ "uuid",
+]
+
+[[package]]
+name = "lib"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "btleplug",
+ "futures",
+ "log",
+ "rand",
  "uuid",
 ]
 
