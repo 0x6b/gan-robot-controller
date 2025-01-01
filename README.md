@@ -46,6 +46,8 @@ or
 $ gan-robot-controller move "R D2"
 ```
 
+Supported moves include `R`, `R'`, `R2`, `R2'`, `F`, `F'`, `F2`, `F2'`, `D`, `D'`, `D2`, `D2'`, `L`, `L'`, `L2`, `L2'`, `B`, `B'`, `B2`, and `B2'`.
+
 ## Supported Platforms
 
 Tested on macOS, but could work on other platforms. See [deviceplug/btleplug](https://github.com/deviceplug/btleplug) for more information.
