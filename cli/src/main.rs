@@ -1,4 +1,7 @@
-use std::{io::Write, sync::LazyLock};
+use std::{
+    io::{stdin, Write},
+    sync::LazyLock,
+};
 
 use clap::Parser;
 use env_logger::{
@@ -44,6 +47,9 @@ pub enum Command {
         /// The move sequence to do on the cube.
         moves: String,
     },
+
+    /// Enter a REPL to interact with the cube.
+    Repl,
 }
 
 #[tokio::main]
@@ -76,6 +82,22 @@ async fn main() -> anyhow::Result<()> {
             controller
                 .do_moves(&moves.split_whitespace().map(Move::from).collect::<Vec<_>>())
                 .await?
+        }
+        Command::Repl => {
+            println!("Entering REPL. Type `exit` to exit.");
+            loop {
+                let mut input = String::new();
+                stdin().read_line(&mut input)?;
+                let input = input.trim();
+
+                if input == "exit" {
+                    break;
+                }
+
+                controller
+                    .do_moves(&input.split_whitespace().map(Move::from).collect::<Vec<_>>())
+                    .await?;
+            }
         }
     }
 
