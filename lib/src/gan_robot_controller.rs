@@ -71,6 +71,17 @@ impl GanRobotController<Connected> {
         Ok(())
     }
 
+    pub async fn do_moves_raw(&self, moves: &[u8]) -> anyhow::Result<()> {
+        info!(
+            "Doing move: {}",
+            moves.iter().map(|m| m.to_string()).collect::<Vec<String>>().join(" ")
+        );
+        self.gan_robot
+            .write(&self.move_characteristic, moves, WriteType::WithoutResponse)
+            .await?;
+        Ok(())
+    }
+
     pub async fn disconnect(&self) -> anyhow::Result<()> {
         info!("Disconnecting from GAN robot");
         self.gan_robot.disconnect().await?;

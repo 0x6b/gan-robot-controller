@@ -38,6 +38,9 @@ or
 $ gan-robot-controller move "R D2"
 ```
 
+> [!WARN]
+> At the moment, the move sequence is not accurate (unexpected moves will be made).
+
 ## Supported Platforms
 
 Tested on macOS, but could work on other platforms. See [deviceplug/btleplug](https://github.com/deviceplug/btleplug) for more information.

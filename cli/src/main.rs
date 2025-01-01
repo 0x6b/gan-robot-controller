@@ -10,6 +10,7 @@ use env_logger::{
 };
 use jiff::{tz::TimeZone, Zoned};
 use lib::{FaceRotation, GanRobotController};
+use log::info;
 
 static TZ: LazyLock<TimeZone> = LazyLock::new(|| TimeZone::get("Asia/Tokyo").unwrap());
 
@@ -44,12 +45,19 @@ pub enum Command {
 
     /// Do moves on the cube with the given move sequence.
     Move {
-        /// The move sequence to do on the cube.
+        /// The move sequence to do on the cube. Each move should be separated by whitespace.
+        /// Please note that the moves should be in the format of face rotation strings like "R",
+        /// "R2", "R'", but it's not accurate at the moment.
         moves: String,
     },
 
     /// Enter a REPL to interact with the cube.
-    Repl,
+    Repl {
+        /// Use raw u8 values for moves instead of the default face rotation strings like "R",
+        /// "R2", "R'".
+        #[arg(short, long)]
+        debug: bool,
+    },
 }
 
 #[tokio::main]
@@ -83,8 +91,8 @@ async fn main() -> anyhow::Result<()> {
                 .do_moves(&moves.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>())
                 .await?
         }
-        Command::Repl => {
-            println!("Entering REPL. Type `exit` to exit.");
+        Command::Repl { debug } => {
+            info!("Entering REPL. Type `exit` to exit.");
             loop {
                 let mut input = String::new();
                 stdin().read_line(&mut input)?;
@@ -94,9 +102,19 @@ async fn main() -> anyhow::Result<()> {
                     break;
                 }
 
-                controller
-                    .do_moves(&input.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>())
-                    .await?;
+                if debug {
+                    let moves = input
+                        .split_whitespace()
+                        .map(|s| s.parse::<u8>().unwrap_or_default())
+                        .collect::<Vec<_>>();
+                    controller.do_moves_raw(&moves).await?;
+                } else {
+                    controller
+                        .do_moves(
+                            &input.split_whitespace().map(FaceRotation::from).collect::<Vec<_>>(),
+                        )
+                        .await?;
+                }
             }
         }
     }

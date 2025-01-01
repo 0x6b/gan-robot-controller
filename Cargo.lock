@@ -258,6 +258,7 @@ dependencies = [
  "env_logger",
  "jiff",
  "lib",
+ "log",
  "tokio",
 ]
 
