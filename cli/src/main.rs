@@ -30,6 +30,15 @@ pub struct Args {
     )]
     pub move_characteristic: String,
 
+    /// The status characteristic UUID of the GAN robot.
+    #[arg(
+        short,
+        long,
+        env = "GAN_ROBOT_STATUS_CHARACTERISTIC",
+        default_value = "0000fff2-0000-1000-8000-00805f9b34fb"
+    )]
+    pub status_characteristic: String,
+
     #[clap(subcommand)]
     pub command: Command,
 }
@@ -79,10 +88,16 @@ async fn main() -> anyhow::Result<()> {
         })
         .init();
 
-    let Args { name, move_characteristic, command } = Args::parse();
-    let controller = GanRobotController::try_new(&name, &move_characteristic)?
-        .try_connect()
-        .await?;
+    let Args {
+        name,
+        move_characteristic,
+        status_characteristic,
+        command,
+    } = Args::parse();
+    let controller =
+        GanRobotController::try_new(&name, &move_characteristic, &status_characteristic)?
+            .try_connect()
+            .await?;
 
     match command {
         Command::Scramble { num } => controller.scramble(num).await?,

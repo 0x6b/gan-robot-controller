@@ -17,6 +17,7 @@ pub trait State {}
 pub struct Uninitialized {
     name: String,
     move_characteristic: Uuid,
+    status_characteristic: Uuid,
 }
 
 impl State for Uninitialized {}
@@ -24,6 +25,7 @@ impl State for Uninitialized {}
 pub struct Connected {
     gan_robot: Peripheral,
     move_characteristic: Characteristic,
+    status_characteristic: Characteristic,
     face_rotation_map: FaceRotationMap,
 }
 
@@ -71,6 +73,12 @@ impl GanRobotController<Connected> {
         Ok(())
     }
 
+    pub async fn get_status(&self) -> anyhow::Result<Vec<u8>> {
+        let status = self.gan_robot.read(&self.status_characteristic).await?;
+        info!("Status: {status:?}");
+        Ok(status)
+    }
+
     pub async fn do_moves_raw(&self, moves: &[u8]) -> anyhow::Result<()> {
         info!(
             "Doing move: {}",
@@ -90,10 +98,17 @@ impl GanRobotController<Connected> {
 }
 
 impl GanRobotController<Uninitialized> {
-    pub fn try_new(name: &str, move_characteristic: &str) -> anyhow::Result<Self> {
+    pub fn try_new(
+        name: &str,
+        move_characteristic: &str,
+        status_characteristic: &str,
+    ) -> anyhow::Result<Self> {
         let name = name.to_string();
         let move_characteristic = Uuid::parse_str(move_characteristic)?;
-        Ok(Self { state: Uninitialized { name, move_characteristic } })
+        let status_characteristic = Uuid::parse_str(status_characteristic)?;
+        Ok(Self {
+            state: Uninitialized { name, move_characteristic, status_characteristic },
+        })
     }
 
     pub async fn try_connect(self) -> anyhow::Result<GanRobotController<Connected>> {
@@ -111,10 +126,14 @@ impl GanRobotController<Uninitialized> {
                     let move_characteristic =
                         Self::find_move_characteristic(&gan_robot, &self.move_characteristic)
                             .await?;
+                    let status_characteristic =
+                        Self::find_move_characteristic(&gan_robot, &self.status_characteristic)
+                            .await?;
                     return Ok(GanRobotController {
                         state: Connected {
                             gan_robot,
                             move_characteristic,
+                            status_characteristic,
                             face_rotation_map: FaceRotationMap::new(),
                         },
                     });
