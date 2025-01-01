@@ -2,7 +2,7 @@
 
 A simple CLI to control the [GAN Cube Robot](https://www.gancube.com/products/gan-speed-cube-robot).
 
-> [!WARN]
+> [!CAUTION]
 > Running this code may break your cube or robot. Use at your own risk.
 
 ## Usage
